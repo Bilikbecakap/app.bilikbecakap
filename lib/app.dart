@@ -8,14 +8,24 @@ import 'features/kamus/presentation/pages/detail_kata_page.dart';
 import 'features/penerjemah/presentation/pages/penerjemah_page.dart';
 import 'features/pembelajaran/presentation/pages/pembelajaran_page.dart';
 import 'features/pembelajaran/presentation/pages/modul_detail_page.dart';
+import 'features/pembelajaran/presentation/pages/pdf_viewer_page.dart';
+import 'features/pembelajaran/data/models/modul_model.dart';
 import 'features/kuis/presentation/pages/kuis_page.dart';
+import 'features/kuis/presentation/pages/kuis_detail_page.dart';
+import 'features/kuis/presentation/pages/kuis_hasil_page.dart';
+import 'features/kuis/data/models/kuis_model.dart';
+import 'features/kuis/data/models/kuis_hasil_model.dart';
 import 'features/splash/presentation/pages/splash_page.dart';
+import 'features/profil/presentation/pages/profil_setup_page.dart';
+import 'features/profil/presentation/pages/profil_page.dart';
 import 'features/artikel/presentation/pages/artikel_detail_page.dart';
 
 final _router = GoRouter(
   initialLocation: '/splash',
   routes: [
     GoRoute(path: '/splash', builder: (context, state) => const SplashPage()),
+    GoRoute(path: '/profil/setup', builder: (context, state) => const ProfilSetupPage()),
+    GoRoute(path: '/profil', builder: (context, state) => const ProfilPage()),
     ShellRoute(
       builder: (context, state, child) =>
           _MainScaffold(location: state.uri.toString(), child: child),
@@ -41,10 +51,17 @@ final _router = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/pembelajaran/modul/:id',
+      path: '/pembelajaran/modul/:slug',
       builder: (context, state) => ModulDetailPage(
-        modul: state.extra as Map<String, dynamic>,
+        modul: state.extra as ModulModel,
       ),
+    ),
+    GoRoute(
+      path: '/pembelajaran/pdf',
+      builder: (context, state) {
+        final data = state.extra as Map<String, String>;
+        return PdfViewerPage(pdfUrl: data['url']!, judul: data['judul']!);
+      },
     ),
     GoRoute(
       path: '/artikel/:slug',
@@ -52,6 +69,24 @@ final _router = GoRouter(
         slug: state.pathParameters['slug']!,
         judul: state.extra as String? ?? '',
       ),
+    ),
+    GoRoute(
+      path: '/kuis/main',
+      builder: (context, state) => KuisDetailPage(
+        kuis: state.extra as KuisModel,
+      ),
+    ),
+    GoRoute(
+      path: '/kuis/hasil',
+      builder: (context, state) {
+        final args = state.extra as Map<String, dynamic>;
+        return KuisHasilPage(
+          hasil: args['hasil'] as KuisHasilResponse?,
+          kuis: args['kuis'] as KuisModel,
+          nama: args['nama'] as String,
+          isPending: args['isPending'] as bool,
+        );
+      },
     ),
   ],
 );

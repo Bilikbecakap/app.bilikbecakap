@@ -3,63 +3,56 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/bilik_card.dart';
+import '../../data/models/modul_model.dart';
+import '../../data/services/pembelajaran_service.dart';
 
-class PembelajaranPage extends StatelessWidget {
+class PembelajaranPage extends StatefulWidget {
   const PembelajaranPage({super.key});
 
-  static const List<Map<String, dynamic>> _modulList = [
-    {
-      'id': '1',
-      'judul': 'Pengenalan Bahasa Melayu Belitung',
-      'deskripsi': 'Pelajari dasar-dasar kosa kata bahasa Melayu khas Belitung Timur.',
-      'kesulitan': 'Dasar',
-      'progress': 0.0,
-      'ikon': Icons.abc,
-    },
-    {
-      'id': '2',
-      'judul': 'Ungkapan Sehari-hari',
-      'deskripsi': 'Frasa dan ungkapan yang sering digunakan dalam percakapan.',
-      'kesulitan': 'Menengah',
-      'progress': 0.0,
-      'ikon': Icons.chat_bubble_outline,
-    },
-    {
-      'id': '3',
-      'judul': 'Peribahasa Belitung',
-      'deskripsi': 'Memahami peribahasa dan maknanya dalam budaya Belitung.',
-      'kesulitan': 'Lanjut',
-      'progress': 0.0,
-      'ikon': Icons.auto_stories,
-    },
-    {
-      'id': '4',
-      'judul': 'Adat dan Tradisi',
-      'deskripsi': 'Mengenal adat istiadat dan tradisi masyarakat Belitung Timur.',
-      'kesulitan': 'Dasar',
-      'progress': 0.0,
-      'ikon': Icons.holiday_village,
-    },
-    {
-      'id': '5',
-      'judul': 'Lagu dan Sastra',
-      'deskripsi': 'Eksplorasi lagu tradisional dan sastra lisan Belitung.',
-      'kesulitan': 'Menengah',
-      'progress': 0.0,
-      'ikon': Icons.music_note,
-    },
-  ];
+  @override
+  State<PembelajaranPage> createState() => _PembelajaranPageState();
+}
 
-  Color _badgeColor(String kesulitan) {
-    switch (kesulitan) {
-      case 'Dasar':
-        return AppColors.success;
-      case 'Menengah':
-        return AppColors.gold;
-      case 'Lanjut':
-        return AppColors.error;
-      default:
-        return AppColors.textSecondary;
+class _PembelajaranPageState extends State<PembelajaranPage> {
+  final List<ModulModel> _modulList = [];
+  int _currentPage = 1;
+  int _lastPage = 1;
+  bool _isLoading = true;
+  bool _isLoadingMore = false;
+  String? _errorMsg;
+
+  bool get _hasMore => _currentPage < _lastPage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPage(1);
+  }
+
+  Future<void> _loadPage(int page) async {
+    try {
+      final result = await PembelajaranService().fetchDaftarModul(page: page);
+      if (!mounted) return;
+      setState(() {
+        if (page == 1) {
+          _modulList
+            ..clear()
+            ..addAll(result.data);
+        } else {
+          _modulList.addAll(result.data);
+        }
+        _currentPage = result.currentPage;
+        _lastPage = result.lastPage;
+        _isLoading = false;
+        _isLoadingMore = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMsg = e.toString();
+        _isLoading = false;
+        _isLoadingMore = false;
+      });
     }
   }
 
@@ -73,94 +66,238 @@ class PembelajaranPage extends StatelessWidget {
         title: Text('Pembelajaran', style: AppTextStyles.subtitle),
         centerTitle: false,
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: _modulList.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final modul = _modulList[index];
-          return BilikCard(
-            onTap: () => context.push(
-              '/pembelajaran/modul/${modul['id']}',
-              extra: modul,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        modul['ikon'] as IconData,
-                        color: AppColors.primary,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            modul['judul'] as String,
-                            style: AppTextStyles.body.copyWith(
-                              color: AppColors.navy,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _badgeColor(modul['kesulitan'] as String)
-                                  .withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              modul['kesulitan'] as String,
-                              style: AppTextStyles.caption.copyWith(
-                                color: _badgeColor(modul['kesulitan'] as String),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(
-                      Icons.chevron_right,
-                      color: AppColors.textSecondary,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(modul['deskripsi'] as String, style: AppTextStyles.caption),
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    value: modul['progress'] as double,
-                    backgroundColor: AppColors.borderColor,
-                    color: AppColors.primary,
-                    minHeight: 6,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text('Belum dimulai', style: AppTextStyles.caption),
-              ],
-            ),
-          );
-        },
+      body: _isLoading
+          ? _buildLoadingSkeleton()
+          : _errorMsg != null
+              ? _buildError()
+              : _buildList(),
+    );
+  }
+
+  Widget _buildLoadingSkeleton() {
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: 3,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (_, __) => Container(
+        height: 260,
+        decoration: BoxDecoration(
+          color: AppColors.borderColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }
+
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.wifi_off_rounded, size: 48, color: AppColors.textSecondary),
+            const SizedBox(height: 16),
+            Text(
+              'Tidak ada koneksi internet',
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.navy,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            Text('Periksa koneksi dan coba lagi.', style: AppTextStyles.caption),
+            const SizedBox(height: 20),
+            TextButton(
+              onPressed: () {
+                setState(() { _isLoading = true; _errorMsg = null; });
+                _loadPage(1);
+              },
+              child: Text(
+                'Coba Lagi',
+                style: AppTextStyles.body.copyWith(color: AppColors.primary),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildList() {
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      itemCount: _modulList.length + (_hasMore ? 1 : 0),
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        if (index == _modulList.length) return _buildMuatLebih();
+        final modul = _modulList[index];
+        return _ModulCard(
+          modul: modul,
+          onTap: () => context.push(
+            '/pembelajaran/modul/${modul.slug}',
+            extra: modul,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMuatLebih() {
+    if (_isLoadingMore) {
+      return const Padding(
+        padding: EdgeInsets.all(16),
+        child: Center(
+          child: CircularProgressIndicator(
+            color: AppColors.primary,
+            strokeWidth: 2.5,
+          ),
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: OutlinedButton(
+        onPressed: () {
+          setState(() => _isLoadingMore = true);
+          _loadPage(_currentPage + 1);
+        },
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          side: const BorderSide(color: AppColors.primary),
+          shape: const StadiumBorder(),
+          minimumSize: const Size(double.infinity, 46),
+        ),
+        child: Text(
+          'Muat Lebih Banyak',
+          style: AppTextStyles.body.copyWith(
+            color: AppColors.primary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModulCard extends StatelessWidget {
+  const _ModulCard({required this.modul, required this.onTap});
+
+  final ModulModel modul;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return BilikCard(
+      padding: EdgeInsets.zero,
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _ModulThumbnail(url: modul.thumbnailUrl),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  modul.title,
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.navy,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  modul.excerpt,
+                  style: AppTextStyles.caption,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (modul.readingTime > 0) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.timer_outlined,
+                        size: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        '${modul.readingTime} mnt baca',
+                        style: AppTextStyles.caption,
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: onTap,
+                    icon: const Icon(Icons.menu_book_rounded, size: 16),
+                    label: const Text('Pelajari Modul'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      textStyle: AppTextStyles.caption.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ModulThumbnail extends StatelessWidget {
+  const _ModulThumbnail({required this.url});
+
+  final String? url;
+
+  @override
+  Widget build(BuildContext context) {
+    if (url == null || url!.isEmpty) return _placeholder();
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+      child: Image.network(
+        url!,
+        width: double.infinity,
+        height: 160,
+        fit: BoxFit.cover,
+        loadingBuilder: (_, child, progress) =>
+            progress == null ? child : _shimmer(),
+        errorBuilder: (_, __, ___) => _placeholder(),
+      ),
+    );
+  }
+
+  Widget _shimmer() => Container(
+        width: double.infinity,
+        height: 160,
+        color: AppColors.borderColor,
+      );
+
+  Widget _placeholder() => Container(
+        width: double.infinity,
+        height: 160,
+        decoration: const BoxDecoration(
+          color: Color(0xFFEAF6F6),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+        ),
+        child: const Center(
+          child: Icon(Icons.school_outlined, size: 44, color: AppColors.primary),
+        ),
+      );
 }

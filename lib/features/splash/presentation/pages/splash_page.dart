@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/services/profil_service.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -28,7 +29,9 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     _controller.forward();
 
     Future.delayed(const Duration(milliseconds: 2400), () {
-      if (mounted) context.go('/');
+      if (mounted) {
+        context.go(ProfilService.sudahSetup() ? '/' : '/profil/setup');
+      }
     });
   }
 

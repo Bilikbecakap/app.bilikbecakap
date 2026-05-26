@@ -42,7 +42,7 @@ class _BeritaSectionState extends State<BeritaSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Berita Budaya', style: AppTextStyles.subtitle),
+          Text('Berita dan Artikel', style: AppTextStyles.subtitle),
           const SizedBox(height: 12),
           FutureBuilder<List<ArtikelModel>>(
             future: _future,

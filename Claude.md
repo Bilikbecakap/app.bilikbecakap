@@ -1,30 +1,33 @@
 # CLAUDE.md — BilikBecakap Mobile App
 
-> **BilikBecakap** adalah Platform Pelestarian Budaya dan Bahasa Melayu Belitung Timur.
+> **BilikBecakap** adalah Platform Pelestarian Budaya dan Bahasa Melayu Belitung.
 > Aplikasi mobile **Android** berbasis Flutter.
 > Target pengguna: **anak sekolah (SD–SMA)**.
-> Fase saat ini: **UI-first dengan data statis** — belum ada database, API, atau state management kompleks.
 
 ---
 
-## 1. Fokus Fase Ini
+## 1. Status Fase Saat Ini
 
-- ✅ Bangun **tampilan (UI)** semua screen terlebih dahulu
-- ✅ Gunakan **data statis hardcode** langsung di widget/page
-- ✅ Target platform: **Android** (iOS dikerjakan di fase berikutnya)
-- ❌ Jangan setup database (Drift/SQLite) dulu
-- ❌ Jangan integrasi API dulu
-- ❌ Jangan buat BLoC/Cubit dulu — cukup `StatelessWidget`
+### Selesai (UI + API)
+| Fitur | Status | Catatan |
+|---|---|---|
+| Splash Screen | ✅ Selesai | Animasi fade + scale, logo |
+| Home | ✅ Selesai | Header, hero banner, feature grid, berita section |
+| Berita/Artikel | ✅ API Connected | Fetch + Hive cache, detail dengan HTML renderer |
+| Penerjemah | ✅ API Connected | 3 bahasa (Belitung/Indonesia/English), offline handling |
+| Kamus | ⚠️ UI belum sepenuhnya Selesai, menyesuaikan kondisi setelah pengembangan | Data masih statis |
+| Pembelajaran | ⚠️ UI belum sepenuhnya Selesai, menyesuaikan kondisi setelah pengembangan | Data masih statis, belum ada video/PDF |
+| Kuis | ⚠️ UI belum sepenuhnya Selesai, menyesuaikan kondisi setelah pengembangan | 5 soal statis, scoring sudah jalan |
+
+### Fase Berikutnya: Integrasi API Pembelajaran
+- Fetch daftar modul dari API
+- Tampilkan video YouTube per modul
+- Buka PDF modul (dari URL API)
+- Opsional: koneksi kuis ke modul tertentu
 
 ---
 
-## 2. Tech Stack (Fase UI)
-
-| Layer | Teknologi |
-|---|---|
-| Framework | **Flutter** (Dart) |
-| Navigation | **go_router** `^14.x` |
-| Font | **google_fonts** `^6.x` (Poppins) |
+## 2. Tech Stack
 
 ```yaml
 dependencies:
@@ -32,55 +35,144 @@ dependencies:
     sdk: flutter
   go_router: ^14.0.0
   google_fonts: ^6.0.0
+  http: ^1.2.0
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  flutter_widget_from_html_core: ^0.15.2
 ```
 
-> Package lain (drift, dio, flutter_bloc, dll.) disiapkan nanti saat fasenya tiba.
+### Package yang akan ditambah di fase Pembelajaran
+| Kebutuhan | Package |
+|---|---|
+| Video YouTube | `youtube_player_flutter` |
+| PDF viewer | `flutter_pdfview` atau `pdfx` |
+| Simpan file download | `path_provider` |
+| Cache file PDF | `flutter_cache_manager` |
 
 ---
 
-## 3. Struktur Folder
+## 3. Struktur Folder Aktual
 
 ```
 lib/
 ├── main.dart
-├── app.dart                        # Root widget, router, theme
+├── app.dart                              # Root widget, GoRouter, ThemeData
 │
-├── core/
-│   └── theme/
-│       ├── app_colors.dart         # Semua warna brand
-│       └── app_text_styles.dart    # Semua typography style
+├── core/theme/
+│   ├── app_colors.dart                   # Semua warna brand
+│   └── app_text_styles.dart             # Semua typography style
 │
-├── features/
-│   ├── home/presentation/pages/home_page.dart
-│   ├── kamus/presentation/pages/
-│   │   ├── kamus_page.dart
-│   │   └── detail_kata_page.dart
-│   ├── penerjemah/presentation/pages/penerjemah_page.dart   # Placeholder
-│   ├── pembelajaran/presentation/pages/
-│   │   ├── pembelajaran_page.dart
-│   │   └── modul_detail_page.dart
-│   └── kuis/presentation/pages/
-│       └── kuis_page.dart
+├── shared/widgets/
+│   ├── bilik_button.dart                 # BilikButton.primary / .secondary
+│   ├── bilik_card.dart                   # BilikCard dengan border + shadow
+│   └── empty_state_widget.dart
 │
-└── shared/widgets/
-    ├── bilik_button.dart
-    ├── bilik_card.dart
-    └── empty_state_widget.dart
+└── features/
+    ├── splash/presentation/pages/
+    │   └── splash_page.dart
+    │
+    ├── home/
+    │   ├── data/
+    │   │   ├── models/artikel_model.dart
+    │   │   └── services/artikel_service.dart    # Fetch + Hive cache
+    │   └── presentation/
+    │       ├── pages/home_page.dart
+    │       └── widgets/berita_section.dart      # FutureBuilder + API
+    │
+    ├── kamus/presentation/pages/
+    │   ├── kamus_page.dart               # Data statis, belum API
+    │   └── detail_kata_page.dart
+    │
+    ├── penerjemah/
+    │   ├── data/
+    │   │   ├── models/terjemahan_model.dart
+    │   │   └── services/penerjemah_service.dart # POST ke API
+    │   └── presentation/pages/penerjemah_page.dart
+    │
+    ├── pembelajaran/presentation/pages/
+    │   ├── pembelajaran_page.dart        # List modul, masih statis
+    │   └── modul_detail_page.dart        # Detail modul, masih statis
+    │
+    ├── kuis/presentation/pages/
+    │   └── kuis_page.dart               # 5 soal statis, StatefulWidget
+    │
+    └── artikel/
+        ├── data/
+        │   ├── models/artikel_detail_model.dart
+        │   ├── models/artikel_detail_model.g.dart  # Hive adapter (generated)
+        │   └── services/artikel_detail_service.dart
+        └── presentation/pages/
+            ├── artikel_detail_page.dart   # HTML renderer
+            └── artikel_webview_page.dart
 ```
 
 ---
 
-## 4. Visual Identity & Design System
+## 4. API
+
+**Base URL:** `https://bilikbecakap.com/api/v1`
+
+| Endpoint | Method | Digunakan di |
+|---|---|---|
+| `/artikel` | GET | `ArtikelService` |
+| `/artikel/:slug` | GET | `ArtikelDetailService` |
+| `/penerjemah` | POST | `PenerjemahService` |
+| `/modul` | GET | Belum diimplementasi |
+| `/modul/:id` | GET | Belum diimplementasi |
+
+### Pola Service yang Dipakai (Cache-First)
+```dart
+// Selalu coba network dulu, fallback ke Hive kalau gagal
+try {
+  final response = await http.get(uri).timeout(Duration(seconds: 10));
+  if (response.statusCode == 200) {
+    await box.put(key, responseBody); // simpan ke cache
+    return parse(responseBody);
+  }
+} catch (_) {
+  final cached = box.get(key);
+  if (cached != null) return parse(cached);
+  rethrow;
+}
+```
+
+---
+
+## 5. Navigasi & Routing
+
+```dart
+// app.dart — GoRouter
+initialLocation: '/splash'
+
+// Shell route (ada bottom nav)
+/               → HomePage
+/kamus          → KamusPage
+/penerjemah     → PenerjemahPage
+/pembelajaran   → PembelajaranPage
+/kuis           → KuisPage
+
+// Detail route (tanpa bottom nav)
+/kamus/detail/:id          → DetailKataPage       (extra: Map<String, String>)
+/pembelajaran/modul/:id    → ModulDetailPage      (extra: Map<String, dynamic>)
+/artikel/:slug             → ArtikelDetailPage    (extra: String judul)
+
+// Rencana route untuk fase Pembelajaran
+/pembelajaran/video/:id    → VideoPlayerPage      (akan dibuat)
+/pembelajaran/pdf/:id      → PdfViewerPage        (akan dibuat)
+```
+
+---
+
+## 6. Visual Identity & Design System
 
 ### Brand Colors
 
 ```dart
-// lib/core/theme/app_colors.dart
 class AppColors {
   static const Color primary       = Color(0xFF54B0AF); // Teal utama
   static const Color primaryDark   = Color(0xFF459A99); // Teal pressed
   static const Color navy          = Color(0xFF002B44); // Heading gelap
-  static const Color gold          = Color(0xFFFCB415); // Aksen emas
+  static const Color gold          = Color(0xFFFCB415); // Aksen emas (tombol swap, badge)
   static const Color white         = Color(0xFFFFFFFF);
   static const Color background    = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFF6B7280);
@@ -91,19 +183,8 @@ class AppColors {
 ```
 
 ### Typography
-
 - **Font:** Poppins via `google_fonts` (400, 500, 600, 700)
-
-```dart
-// lib/core/theme/app_text_styles.dart
-class AppTextStyles {
-  static TextStyle title    = /* 24px, bold, navy */
-  static TextStyle subtitle = /* 18px, semibold, navy */
-  static TextStyle body     = /* 14px, regular, gray */
-  static TextStyle caption  = /* 12px, regular, gray */
-  static TextStyle button   = /* 14px, semibold, white */
-}
-```
+- Class: `AppTextStyles` → `.title`, `.subtitle`, `.body`, `.caption`, `.button`
 
 ### Design Tokens
 
@@ -113,81 +194,15 @@ class AppTextStyles {
 | Border radius button/badge | `999px` (pill) |
 | Card padding | `16px` |
 | Section spacing | `24px` |
-| Bottom nav height | `60px` |
+| Bottom nav — 5 tab | fixed, selectedItemColor: teal |
 
-### Komponen UI Standar
+### Komponen Standar
 
 | Komponen | Spesifikasi |
 |---|---|
 | `BilikButton.primary()` | Background teal, teks putih, pill |
 | `BilikButton.secondary()` | Background putih, border + teks navy, pill |
 | `BilikCard()` | White bg, border `#E5E7EB`, radius 12px, shadow subtle |
-
----
-
-## 5. Navigasi & Routing
-
-### Bottom Navigation — 5 Tab
-
-| Tab | Route | Halaman |
-|---|---|---|
-| Beranda | `/` | HomePage |
-| Kamus | `/kamus` | KamusPage |
-| Terjemah | `/penerjemah` | PenerjemahPage |
-| Belajar | `/pembelajaran` | PembelajaranPage |
-| Kuis | `/kuis` | KuisPage |
-
-### Halaman Detail (tanpa bottom nav)
-
-| Route | Halaman |
-|---|---|
-| `/kamus/detail/:id` | DetailKataPage |
-| `/pembelajaran/modul/:id` | ModulDetailPage |
-
----
-
-## 6. Screen Specifications
-
-### Home Screen
-- Header logo + teks sapaan
-- Hero banner: gradient teal, tagline bold navy, tombol CTA pill
-- Feature grid 2×2: Kamus · Penerjemah · Pembelajaran · Kuis
-- Section berita: berita tentang budaya dan bahasa melayu belitung (3 item statis)
-- Bottom nav 5 tab (active state teal)
-
-### Kamus Screen
-- Search bar rounded (UI saja, belum berfungsi)
-- Filter chip A–Z scroll horizontal (UI saja)
-- List kata statis (7 contoh kata hardcode)
-- FAB teal kanan bawah
-
-### Detail Kata Screen
-- Nama kata besar, kategori badge
-- Definisi dan contoh kalimat (data statis)
-- Tombol putar audio (UI saja, belum berfungsi)
-- Tidak ada bottom nav (halaman push)
-
-### Penerjemah Screen
-- Tampilkan halaman **placeholder** "Segera Hadir"
-- Ikon ilustrasi, pesan informatif, info box emas
-
-### Pembelajaran Screen
-- List card modul (5 modul statis)
-- Setiap card: ikon, judul, badge kesulitan (Dasar/Menengah/Lanjut), deskripsi, progress bar statis
-
-### Modul Detail Screen
-- Hero banner teal (ikon, judul, badge kesulitan)
-- Deskripsi modul
-- Daftar materi yang dipelajari
-- Tidak ada bottom nav (halaman push)
-
-### Kuis Screen
-- Progress bar soal di atas
-- Tampilan soal pilihan ganda (5 soal statis)
-- UI tombol pilihan bergaya card (A/B/C/D)
-- Tombol "Selanjutnya" / "Selesai" (navigasi menggunakan setState)
-- Halaman hasil skor setelah semua soal dijawab
-- Bottom nav tetap tampil (tab aktif: Kuis)
 
 ---
 
@@ -199,13 +214,16 @@ class AppTextStyles {
 - Gunakan `const` constructor sebisa mungkin
 - Satu file maksimal **300 baris** — pecah jika lebih
 - ❌ Jangan hardcode warna/ukuran font langsung di widget — pakai `AppColors` dan `AppTextStyles`
-- ❌ Jangan gunakan `setState` kecuali benar-benar perlu untuk interaksi UI lokal sederhana
+- `setState` hanya untuk interaksi UI lokal (kuis, form input)
+- `FutureBuilder` untuk async data di halaman yang belum pakai BLoC
+- Pola service: selalu cache-first (network → simpan Hive → fallback Hive)
 
 ---
 
 ## 8. Cara Kerja dengan AI (Claude)
 
-- Sebutkan **screen mana** yang sedang dikerjakan di awal prompt
-- Minta **satu screen per sesi** agar output tetap fokus
+- Sebutkan **screen atau fitur mana** yang sedang dikerjakan di awal prompt
 - Jika ada konflik antara instruksi prompt dan `CLAUDE.md` → **CLAUDE.md yang menang**
-- Setelah semua tampilan selesai, fase berikutnya: setup state management → database → API
+- Untuk fitur baru yang butuh API → ikuti pola `ArtikelService` (cache-first, Hive)
+- Fase berikutnya: integrasi API Pembelajaran (modul, video YT, PDF)
+- Fase setelah itu: BLoC/Cubit, lalu database lokal penuh
